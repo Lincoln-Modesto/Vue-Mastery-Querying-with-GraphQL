@@ -1,24 +1,26 @@
 <script>
-import HelloWorld from './components/HelloWorld.vue'
 import { ref, computed } from 'vue'
 import { useQuery } from '@vue/apollo-composable'
 import ALL_BOOKS_QUERY from './graphql/allBooks.query.gql'
+import EditRating from './components/EditRating.vue'
 
 export default {
   name: 'App',
   components: {
-    HelloWorld
+    EditRating
   },
   setup() {
     const searchTerm = ref('')
-    const { result, loading, error } = useQuery(ALL_BOOKS_QUERY, 
-    () => ({ 
-      search: searchTerm.value 
+    const activeBook = ref(null)
+
+    const { result, loading, error } = useQuery(ALL_BOOKS_QUERY,
+      () => ({
+        search: searchTerm.value
       }),
-    () => ({
-      debounce: 500,
-      enabled: searchTerm.value.length > 2
-    }))
+      () => ({
+        debounce: 500,
+        enabled: searchTerm.value.length > 2
+      }))
 
     const books = computed(() => result.value?.allBooks ?? [])
 
@@ -26,7 +28,8 @@ export default {
       books,
       searchTerm,
       loading,
-      error
+      error,
+      activeBook
     }
   }
 }
@@ -37,12 +40,19 @@ export default {
   <div>
     <input type="text" v-model="searchTerm" />
 
-      <p v-if="loading">Loading...</p>
-      <p v-else-if="error">Something went wrong! Please try again</p>
+    <p v-if="loading">Loading...</p>
+    <p v-else-if="error">Something went wrong! Please try again</p>
     <template v-else>
-      <p v-for="book in books" :key="book.id">
-        {{ book.title }}
+      <p v-if="activeBook">
+        Update "{{ activeBook.title }}" rating:
+        <EditRating :initial-rating="activeBook.rating" :book-id="activeBook.id" @closeForm="activeBook = null" />
       </p>
+      <template v-else>
+        <p v-for="book in books" :key="book.id">
+        {{ book.title }} - {{ book.rating }}
+        <button @click="activeBook = book">Edit rating</button>
+      </p>
+      </template>
     </template>
   </div>
 </template>
