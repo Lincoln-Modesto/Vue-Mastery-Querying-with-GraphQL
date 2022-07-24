@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { useQuery } from '@vue/apollo-composable'
 import ALL_BOOKS_QUERY from './graphql/allBooks.query.gql'
+import BOOK_SUBSCRIPTION from './graphql/newBook.subscription.gql'
 import EditRating from './components/EditRating.vue'
 import AddBook from './components/AddBook.vue'
 
@@ -16,14 +17,27 @@ export default {
     const activeBook = ref(null)
     const showNewBookForm = ref(false)
 
-    const { result, loading, error } = useQuery(ALL_BOOKS_QUERY,
+    const { result, loading, error, subscribeToMore } = useQuery(ALL_BOOKS_QUERY,
       () => ({
         search: searchTerm.value
       }),
       () => ({
         debounce: 500,
-        enabled: searchTerm.value.length > 2
+        // enabled: searchTerm.value.length > 2
       }))
+    
+    subscribeToMore(() => ({
+      document: BOOK_SUBSCRIPTION,
+      updateQuery(previousResult, newResult) {
+        const res = {
+          allBooks: [
+            ...previousResult.allBooks,
+            newResult.subscriptionData.data.bookSub
+          ]
+        }
+        return res
+      }
+    })) 
 
     const books = computed(() => result.value?.allBooks ?? [])
 
@@ -58,9 +72,9 @@ export default {
       </p>
       <template v-else>
         <p v-for="book in books" :key="book.id">
-        {{ book.title }} - {{ book.rating }}
-        <button @click="activeBook = book">Edit rating</button>
-      </p>
+          {{ book.title }} - {{ book.rating }}
+          <button @click="activeBook = book">Edit rating</button>
+        </p>
       </template>
     </template>
   </div>
