@@ -1,6 +1,6 @@
 <script>
 import HelloWorld from './components/HelloWorld.vue'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useQuery } from '@vue/apollo-composable'
 import ALL_BOOKS_QUERY from './graphql/allBooks.query.gql'
 
@@ -11,12 +11,19 @@ export default {
   },
   setup() {
     const searchTerm = ref('')
-    const { result, loading, error } = useQuery(ALL_BOOKS_QUERY, () => ({ search: searchTerm.value }))
+    const { result, loading, error } = useQuery(ALL_BOOKS_QUERY, 
+    () => ({ 
+      search: searchTerm.value 
+      }),
+    () => ({
+      debounce: 500,
+      enabled: searchTerm.value.length > 2
+    }))
 
-    console.log(result)
+    const books = computed(() => result.value?.allBooks ?? [])
 
     return {
-      result,
+      books,
       searchTerm,
       loading,
       error
@@ -33,7 +40,7 @@ export default {
       <p v-if="loading">Loading...</p>
       <p v-else-if="error">Something went wrong! Please try again</p>
     <template v-else>
-      <p v-for="book in result.allBooks" :key="book.id">
+      <p v-for="book in books" :key="book.id">
         {{ book.title }}
       </p>
     </template>
