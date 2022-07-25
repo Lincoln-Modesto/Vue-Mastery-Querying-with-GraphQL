@@ -4,6 +4,8 @@ import { ApolloClient, createHttpLink, InMemoryCache, split } from '@apollo/clie
 import { getMainDefinition } from '@apollo/client/utilities'
 import { DefaultApolloClient } from '@vue/apollo-composable'
 import { WebSocketLink } from '@apollo/client/link/ws'
+import FAVORITE_BOOKS_QUERY from './graphql/favoriteBooks.query.gql'
+import typedefs from './graphql/typedefs.gql'
 import './style.css'
 
 const wsLink = new WebSocketLink({
@@ -30,9 +32,24 @@ httpLink
 
 const cache = new InMemoryCache()
 
+cache.writeQuery({
+  query: FAVORITE_BOOKS_QUERY,
+  data: {
+    favoriteBooks: [
+      {
+        __typename: 'Book',
+        title: 'The Black Swan',
+        id: 123,
+        rating: 5,
+      },
+    ],
+  },
+})
+
 const apolloClient = new ApolloClient({
   link,
   cache,
+  typedefs
 })
 
 const app = createApp({
